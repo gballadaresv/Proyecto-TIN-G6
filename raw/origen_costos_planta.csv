@@ -1,0 +1,48 @@
+planta            ; mes    ; energia_clp   ; insumos_clp      ; mano_obra_clp ; moneda; glosa
+Cerro Norte       ; 2025-01; 10.800.686.617; 8.400.534.036,00 ; $4.800.305.163; CLP   ; energ�a y combusti�n
+Cerro Norte       ; 2025-02; 10.944.247.363; 8.512.192.393    ; 4864109939    ; CLP   ; energ�a y combusti�n
+P. CERRO NORTE    ; 2025-03; 11834227655   ; 9.204.399.287,00 ; 5259656735    ; CLP   ; remuneraci�n turno
+P. CERRO NORTE    ; 2025-04; 12.074.080.503; 9.390.951.502    ; $5.366.258.001; CLP   ; operaci�n planta
+P. CERRO NORTE    ; 2025-05; 12155923860   ; 9.454.607.447,00 ; $5.402.632.827; CLP   ; insumos y reactivos
+Cerro Norte       ; 2025-06; 12652294704   ; N/A              ; $5.623.242.091; CLP   ; remuneraci�n turno
+Planta Cerro Norte; 2025-07; 12.753.838.824; 9.919.652.419    ; $5.668.372.811; CLP   ; depreciaci�n equipos
+Planta Cerro Norte; 2025-08; 12952006772   ; 10.073.783.045   ; 5756447454    ; CLP   ; energ�a y combusti�n
+Planta Cerro Norte; 2025-09; 14.047.057.283; 10.925.488.998   ; 6243136570    ; CLP   ; operaci�n planta
+Cerro Norte       ; 2025-10; 14.524.640.588; 11.296.942.679,00; 6455395817    ; CLP   ; insumos y reactivos
+Cerro Norte       ; 2025-11; 13.320.403.624; 10.360.313.930   ; 5920179388    ; CLP   ; operaci�n planta
+Planta Cerro Norte; 2025-12; 12.429.291.261; 9.667.226.536,00 ; 5524129449    ; CLP   ; remuneraci�n turno
+Loa               ; 2025-01; 11195933638   ; 8.707.948.385    ; $4.975.970.506; CLP   ; insumos y reactivos
+P. LOA            ; 2025-02; 10.002.731.877; 7.779.902.571    ; $4.445.658.612; CLP   ; insumos y reactivos
+planta            ; mes    ; energia_clp   ; insumos_clp      ; mano_obra_clp ; moneda; glosa
+Planta Loa        ; 2025-04; 12.572.062.290; 9.778.270.670    ; $5.587.583.240; CLP   ; operaci�n planta
+P. LOA            ; 2025-05; 12.348.930.712; 9.604.723.887    ; 5488413650    ; CLP   ; energ�a y combusti�n
+Planta Loa        ; 2025-06; 13552412322   ; 10.540.765.139,00; 6023294365    ; CLP   ; remuneraci�n turno
+Loa               ; 2025-07; 13026717641   ; 10.131.891.498,00; 5789652285    ; CLP   ; insumos y reactivos
+Loa               ; 2025-09; 13285451361   ; 10.333.128.836,00; $5.904.645.049; CLP   ; insumos y reactivos
+P. LOA            ; 2025-10; 14459286722   ; 11.246.111.895,00; 6426349654    ; CLP   ; operaci�n planta
+Loa               ; 2025-11; 14.397.881.033; 11.198.351.915,00; 6399058237    ; CLP   ; operaci�n planta
+Loa               ; 2025-12; 14716731151   ; 11.446.346.451,00; $6.540.769.401; CLP   ; remuneraci�n turno
+Planta Salado     ; 2025-01; 11398525594   ; 8.865.519.906,00 ; $5.066.011.375; CLP   ; insumos y reactivos
+P. SALADO         ; 2025-02; 9.327.102.647 ; 7.254.413.170    ; $4.145.378.954; CLP   ; insumos y reactivos
+Salado            ; 2025-03; 12.107.212.597; 9.416.720.909,00 ; 5380983376    ; CLP   ; depreciaci�n equipos
+Salado            ; 2025-04; 11912772604   ; 9.265.489.803    ; $5.294.565.602; CLP   ; remuneraci�n turno
+Salado            ; 2025-05; 12735978706   ; 9.905.761.216    ; 5660434980    ; CLP   ; remuneraci�n turno
+Planta Salado     ; 2025-06; 11465543605   ; 8.917.645.026    ; $5.095.797.158; CLP   ; remuneraci�n turno
+Salado            ; 2025-07; 13.273.874.223; 10.324.124.396,00; 5899499655    ; CLP   ; operaci�n planta
+Salado            ; 2025-08; 13.343.747.787; 10.378.470.501,00; 5930554572    ; CLP   ; operaci�n planta
+P. SALADO         ; 2025-09; 13.617.069.003; 10.591.053.669,00; 6052030668    ; CLP   ; remuneraci�n turno
+Salado            ; 2025-10; 14875686231   ; 11.569.978.180   ; 6611416103    ; CLP   ; insumos y reactivos
+Salado            ; 2025-12; 13.253.515.385; 10.308.289.744   ; 5890451282    ; CLP   ; energ�a y combusti�n
+Planta Illapel    ; 2025-01; 12.228.216.403; 9.510.834.980    ; 5434762846    ; CLP   ; insumos y reactivos
+Planta Illapel    ; 2025-02; 10.278.826.902; 7.994.643.146,00 ; 4568367512    ; CLP   ; energ�a y combusti�n
+Planta Illapel    ; 2025-03; 12.439.083.538; 9.674.842.752    ; $5.528.481.573; CLP   ; energ�a y combusti�n
+Planta Illapel    ; 2025-04; 11157359899   ; 8.677.946.588    ; 4958826622    ; CLP   ; insumos y reactivos
+Planta Illapel    ; 2025-05; 11.796.703.857; 9.175.214.111,00 ; 5242979492    ; CLP   ; insumos y reactivos
+Planta Illapel    ; 2025-06; 12.549.565.172; 9.760.772.912    ; 5577584521    ; CLP   ; depreciaci�n equipos
+P. ILLAPEL        ; 2025-07; 13405338368   ; 10.426.374.286,00; $5.957.928.164; CLP   ; remuneraci�n turno
+Planta Illapel    ; 2025-08; 13505460530   ; 10.504.247.079,00; $6.002.426.902; CLP   ; energ�a y combusti�n
+Illapel           ; 2025-09; 12.719.568.608; 9.892.997.806    ; $5.653.141.604; CLP   ; operaci�n planta
+Illapel           ; 2025-10; 13.331.337.985; 10.368.818.433,00; 5925039104    ; CLP   ; operaci�n planta
+Illapel           ; 2025-11; 13.326.100.553; 10.364.744.875   ; 5922711357    ; CLP   ; depreciaci�n equipos
+Planta Illapel    ; 2025-12; 12.836.570.226; 9.983.999.064    ; $5.705.142.323; CLP   ; depreciaci�n equipos
+TOTAL             ;        ;               ;                  ;               ;       ; 

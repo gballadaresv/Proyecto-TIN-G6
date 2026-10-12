@@ -1,0 +1,15 @@
+# Dependencias del pipeline CuprumAndes
+# Probado con Python 3.12.x en Linux (WSL2/Ubuntu), macOS y Windows.
+#
+# Principio de diseño: mínimo de dependencias de terceros.
+# La biblioteca estándar de Python maneja: sqlite3, urllib.request, json,
+# pathlib y csv — no se necesitan paquetes extra para esas tareas.
+#
+# pandas: motor principal de procesamiento tabular (lectura, limpieza,
+#         agregación y escritura de Parquet).
+pandas==2.2.3
+
+# pyarrow: motor Parquet para pandas. Permite leer y escribir archivos
+#          .parquet desde pandas sin configuración adicional.
+#          Compatible con Windows, macOS y Linux (wheels disponibles en PyPI).
+pyarrow==17.0.0

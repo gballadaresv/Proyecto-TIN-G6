@@ -1,1 +1,328 @@
-# Proyecto-TIN-G6
+# CuprumAndes — Pipeline de Procesamiento de Datos (Proyecto TIN G6)
+
+Pipeline de datos reproducible para la extracción, limpieza, validación y cálculo de métricas operacionales y financieras de la minera de cobre **CuprumAndes SpA** para el ejercicio 2025.
+
+---
+
+## 1. Propósito del proyecto
+
+El objetivo analítico central del proyecto es responder una pregunta estratégica planteada por el directorio y la gerencia de CuprumAndes:
+
+> **¿El cash cost por libra de cobre subió o bajó durante 2025, y el resultado financiero positivo del ejercicio se debió a un precio del cobre favorable en el mercado o a una reducción real en los costos de producción (producir más barato)?**
+
+Para resolver esta interrogante, el pipeline integra cuatro fuentes de datos dispersas:
+1. Base operacional SQLite (`origen_mina.sqlite`), que contiene los lotes de producción diaria de mineral.
+2. Archivo CSV de costos de planta (`origen_costos_planta.csv`), que desglosa los costos operacionales mensuales en energía, insumos y mano de obra.
+3. Archivo JSON de leyes de laboratorio (`origen_leyes_laboratorio.json`), que ingresa al proceso para dar cumplimiento al requerimiento de ingesta de las cuatro fuentes.
+4. API pública de indicadores económicos (`mindicador.cl`), que provee la serie diaria del precio internacional del cobre (USD/lb) y del tipo de cambio dólar observado (USD/CLP).
+
+El pipeline procesa estas fuentes a través de una arquitectura Medallion (`raw` → `bronze` → `silver` → `gold`), generando una tabla final consolidada a nivel empresa y frecuencia mensual (`gold/gold_metricas.parquet`) que permite comparar la evolución mensual del cash cost frente al precio internacional y determinar con evidencia cuantitativa los causantes del desempeño económico del año.
+
+---
+
+## 2. Prerrequisitos
+
+- **Versión de Python probada:** Python **3.12** (específicamente probado y validado sobre Python 3.12.3 en Linux / WSL2 Ubuntu, compatible también con macOS y Windows).
+- **Acceso a Internet:** Se requiere conexión a Internet **únicamente durante la primera ejecución**. En dicha corrida, la etapa de extracción descarga las series del año 2025 desde la API de `mindicador.cl` (`precio_cobre_2025.json` y `tipo_cambio_2025.json`) y las persiste en la carpeta `raw/`. Todas las ejecuciones subsecuentes pueden realizarse de forma 100% offline.
+
+---
+
+## 3. Instalación y preparación del entorno
+
+Se recomienda ejecutar el proyecto dentro de un entorno virtual limpio para garantizar el aislamiento de dependencias.
+
+### Paso 1: Clonar o posicionarse en la raíz del proyecto
+```bash
+cd Proyecto-TIN-G6
+```
+
+### Paso 2: Crear un entorno virtual limpio
+- En **Linux / macOS / WSL (Bash)**:
+  ```bash
+  python3 -m venv .venv
+  ```
+- En **Windows (PowerShell o CMD)**:
+  ```powershell
+  python -m venv .venv
+  ```
+
+### Paso 3: Activar el entorno virtual
+- En **Linux / macOS / WSL (Bash)**:
+  ```bash
+  source .venv/bin/activate
+  ```
+- En **Windows (PowerShell)**:
+  ```powershell
+  .venv\Scripts\Activate.ps1
+  ```
+- En **Windows (CMD)**:
+  ```cmd
+  .venv\Scripts\activate.bat
+  ```
+
+### Paso 4: Instalar las dependencias fijadas
+Instale las dependencias exactas indicadas en `requirements.txt`:
+```bash
+pip install -r requirements.txt
+```
+
+> **Nota sobre dependencias:** El proyecto sigue el principio de dependencias mínimas de terceros. Solo instala `pandas==2.2.3` y `pyarrow==17.0.0` para el procesamiento tabular y la lectura/escritura de archivos Parquet. Las demás funcionalidades (conexión SQLite, peticiones HTTP, parseo JSON/CSV y rutas) utilizan la biblioteca estándar de Python (`sqlite3`, `urllib.request`, `json`, `csv`, `pathlib`).
+
+---
+
+## 4. Ejecución del pipeline
+
+Para ejecutar el pipeline completo de punta a punta (las tres etapas en secuencia más la generación del log de validaciones), ejecute un único comando desde la raíz del proyecto:
+
+```bash
+python main.py
+```
+
+Durante la ejecución, el script mostrará en consola el avance de cada una de las tres etapas (`[1/3]`, `[2/3]`, `[3/3]`) y concluirá desplegando un resumen de las validaciones registradas.
+
+---
+
+## 5. Estructura de carpetas y arquitectura de datos
+
+El repositorio implementa una arquitectura por capas Medallion:
+
+```text
+Proyecto-TIN-G6/
+├── main.py                    # Punto de entrada único del pipeline
+├── requirements.txt           # Dependencias fijadas (pandas y pyarrow)
+├── README.md                  # Este archivo de instrucciones y documentación
+├── ARCHITECTURE.md            # Documentación técnica de arquitectura y decisiones
+├── PROJECT_DESCRIPTION.md     # Descripción del problema, alcance y objetivos
+├── PROJECT_STRUCTURE.md       # Mapa detallado de navegación del repositorio
+├── BRONZE_SCHEMA.md           # Especificación de esquema y trazabilidad de bronze
+├── SILVER_SCHEMA.md           # Especificación de esquema y formatos de silver
+├── GOLD_SCHEMA.md             # Especificación de columnas y fórmulas de gold
+├── validation_log.parquet     # Archivo persistente con el registro de todas las fallas
+│
+├── raw/                       # Capa Cruda: fuentes originales (inmutables) + JSON de API
+│   ├── origen_mina.sqlite
+│   ├── origen_costos_planta.csv
+│   ├── origen_leyes_laboratorio.json
+│   ├── precio_cobre_2025.json    (generado en la primera corrida)
+│   └── tipo_cambio_2025.json     (generado en la primera corrida)
+│
+├── bronze/                    # Capa Bronze: datos extraídos sin limpiar en Parquet (texto plano)
+│   ├── bronze_lotes.parquet
+│   ├── bronze_costos.parquet
+│   ├── bronze_leyes_laboratorio.parquet
+│   ├── bronze_precio_cobre.parquet
+│   └── bronze_tipo_cambio.parquet
+│
+├── silver/                    # Capa Silver: datos limpios, validados y tipados en Parquet
+│   ├── silver_lotes.parquet
+│   ├── silver_costos.parquet
+│   ├── silver_precio_cobre.parquet
+│   └── silver_tipo_cambio.parquet
+│
+├── gold/                      # Capa Gold: tabla analítica agregada mensual a nivel empresa
+│   └── gold_metricas.parquet
+│
+└── code/                      # Módulos de lógica del pipeline
+    ├── config.py              # Rutas a directorios y constantes analíticas compartidas
+    ├── business_rules.py      # Declaración de reglas de negocio y rangos de validez
+    ├── validation_log.py      # Acumulación en memoria y exportación del log de validaciones
+    ├── extraction.py          # Etapa 1: Extracción hacia bronze/
+    ├── cleaning.py            # Etapa 2: Limpieza y validación hacia silver/
+    └── metrics.py             # Etapa 3: Cálculo de métricas analíticas hacia gold/
+```
+
+---
+
+## 6. Etapas del pipeline: qué hace cada una, qué lee y qué escribe
+
+### Etapa 1: Extracción (`code/extraction.py`)
+- **Qué hace:**
+  1. Si no existen en `raw/`, consulta las URLs de la API de `mindicador.cl` para precio del cobre y dólar, y almacena las respuestas JSON crudas en `raw/`. Si ya existen, las reutiliza sin usar la red.
+  2. Lee las columnas relevantes de cada fuente en `raw/`.
+  3. Asigna a cada registro atributos de trazabilidad de auditoría: `source_file` (nombre del archivo origen) y `source_row_index` (número de línea o posición ordinal 1-indexed original).
+  4. Extrae las leyes de laboratorio preservando la estructura JSON como texto plano en una columna `record_content` (por diseño del equipo, entra al proceso pero no pasa a capas posteriores).
+  5. Almacena todos los valores como texto plano (`dtype object/string`) sin inferir tipos ni modificar valores para evitar pérdida de información previa a la limpieza.
+- **Qué lee:**
+  - `https://mindicador.cl/api/libra_cobre/2025` y `https://mindicador.cl/api/dolar/2025` (vía red, solo si no existen los archivos locales).
+  - `raw/origen_mina.sqlite`
+  - `raw/origen_costos_planta.csv`
+  - `raw/origen_leyes_laboratorio.json`
+  - `raw/precio_cobre_2025.json` y `raw/tipo_cambio_2025.json`
+- **Qué escribe:**
+  - `raw/precio_cobre_2025.json` y `raw/tipo_cambio_2025.json` (solo en la primera corrida).
+  - `bronze/bronze_lotes.parquet`
+  - `bronze/bronze_costos.parquet`
+  - `bronze/bronze_leyes_laboratorio.parquet`
+  - `bronze/bronze_precio_cobre.parquet`
+  - `bronze/bronze_tipo_cambio.parquet`
+
+### Etapa 2: Limpieza y Validación (`code/cleaning.py`)
+- **Qué hace:**
+  1. Descarta filas de cabecera repetida dentro de los datos y filas de resumen (`TOTAL` o vacías) en `bronze_costos`, registrando cada caso en el log de validaciones.
+  2. Estandariza fechas:
+     - Meses de lotes (enteros `1` a `12`) se normalizan al formato canónico `YYYY-MM` asociándolos al año de análisis (`2025`).
+     - Fechas de las series de precios (formato ISO 8601 UTC de la API) se convierten a `YYYY-MM-DD`.
+  3. Convierte formatos numéricos:
+     - Costos en CLP: elimina símbolos de moneda (`$`), puntos separadores de miles y maneja comas decimales (incluyendo terminaciones `,00`).
+     - Lotes: aplica heurística dependiente del campo para resolver la ambigüedad entre puntos como miles en toneladas y puntos decimales en leyes o recuperaciones.
+  4. Ejecuta validaciones de campo post-conversión: verifica que los valores numéricos no sean nulos, no sean negativos y se encuentren dentro de los rangos plausibles (`VALID_RANGES` en `business_rules.py`). Valida que los porcentajes estén en escala 0–100.
+  5. Detecta filas duplicadas y registra alertas en el log (las filas se preservan en silver para revisión).
+  6. Comprueba que las series de precios cuenten con cotizaciones para el último día calendario de cada mes.
+- **Qué lee:**
+  - `bronze/bronze_costos.parquet`
+  - `bronze/bronze_lotes.parquet`
+  - `bronze/bronze_precio_cobre.parquet`
+  - `bronze/bronze_tipo_cambio.parquet`
+- **Qué escribe:**
+  - `silver/silver_costos.parquet`
+  - `silver/silver_lotes.parquet`
+  - `silver/silver_precio_cobre.parquet`
+  - `silver/silver_tipo_cambio.parquet`
+
+### Etapa 3: Cálculo de Métricas (`code/metrics.py`)
+- **Qué hace:**
+  1. Lee los cuatro datasets limpios desde `silver/`.
+  2. Calcula el cobre fino primero a nivel de cada lote individual en toneladas métricas, suma mensualmente a nivel empresa y convierte la suma a libras una sola vez.
+  3. Extrae la cotización del último día hábil disponible de cada mes tanto para el precio del cobre como para el tipo de cambio USD/CLP.
+  4. Suma los costos operacionales de todas las plantas por mes. Si algún componente de costo está ausente (`NaN`), el costo total del mes completo queda como `NaN` para no distorsionar el cálculo.
+  5. Une las series mediante un `LEFT JOIN` por mes y calcula: ingresos en USD, costos totales en USD, cash cost por libra y utilidades operacionales en USD.
+  6. Valida la presencia de los 12 meses de 2025 y aplica verificaciones de sanidad numérica (no-negatividad y rangos históricos).
+- **Qué lee:**
+  - `silver/silver_lotes.parquet`
+  - `silver/silver_costos.parquet`
+  - `silver/silver_precio_cobre.parquet`
+  - `silver/silver_tipo_cambio.parquet`
+- **Qué escribe:**
+  - `gold/gold_metricas.parquet`
+
+### Finalización (`main.py` y `code/validation_log.py`)
+- Al concluir las tres etapas (o al ocurrir una interrupción técnica), `validation_log.write_log()` persiste todas las fallas acumuladas en `validation_log.parquet` y `validation_log.print_summary()` imprime un informe condensado en consola.
+
+---
+
+## 7. Reglas de negocio y fórmulas de la tabla Gold
+
+Las reglas analíticas están centralizadas en `code/business_rules.py`:
+
+1. **Grano analítico:** Una fila por mes del año 2025 a nivel empresa consolidada. No se realiza seguimiento individual por planta concentradora ni por rajo mina.
+2. **Fórmula de Cobre Fino (REGLA 2):**
+   - A nivel de lote:
+     $$\text{cobre\_fino\_lote\_t} = \text{toneladas\_tratadas} \times \left(\frac{\text{ley\_pct}}{100}\right) \times \left(\frac{\text{recuperacion\_pct}}{100}\right)$$
+   - A nivel mensual de empresa:
+     $$\text{cobre\_fino\_mes\_t} = \sum \text{cobre\_fino\_lote\_t}$$
+     $$\text{cobre\_fino\_lb} = \text{cobre\_fino\_mes\_t} \times 2204.62262$$
+   - *Razón:* Al calcular el cobre fino primero por lote antes de agrupar, la ponderación por ley y tonelaje surge de forma natural y matemáticamente exacta, sin requerir una columna de ley ponderada artificial.
+3. **Precio del cobre y Tipo de Cambio de cierre (REGLA 1 y REGLA 4):**
+   - Se selecciona el valor de la fecha más reciente (último día hábil registrado en la serie) de cada mes. Este valor único se aplica a toda la producción del mes.
+4. **Costos Totales en USD (REGLA 3):**
+   - Suma mensual en moneda local:
+     $$\text{costos\_totales\_clp} = \sum (\text{energia\_clp} + \text{insumos\_clp} + \text{mano\_obra\_clp})$$
+   - Conversión a USD con el dólar de cierre:
+     $$\text{costos\_totales\_usd} = \frac{\text{costos\_totales\_clp}}{\text{tipo\_cambio\_clp\_usd}}$$
+   - *Tratamiento de costos faltantes:* Si para un mes y planta falta algún componente (por ejemplo, el valor `N/A` en `insumos_clp` de la planta Cerro Norte en junio de 2025), la constante `IMPUTE_MISSING_COST = False` determina que **no se imputa con cero**. En consecuencia, `costos_totales_usd` queda como `NaN` para dicho mes, protegiendo al análisis de subestimar costos.
+5. **Ingresos en USD:**
+   $$\text{ingresos\_usd} = \text{cobre\_fino\_lb} \times \text{precio\_cobre\_usd\_lb}$$
+6. **Cash Cost (USD/lb):**
+   $$\text{cash\_cost\_usd\_lb} = \frac{\text{costos\_totales\_usd}}{\text{cobre\_fino\_lb}}$$
+   Representa el costo operacional unitario por libra producida. Si los costos totales son `NaN`, el cash cost queda como `NaN`.
+7. **Utilidades Operacionales (USD):**
+   $$\text{utilidades\_usd} = \text{ingresos\_usd} - \text{costos\_totales\_usd}$$
+
+### Esquema final de `gold/gold_metricas.parquet` (7 columnas)
+| Columna | Tipo | Unidad | Descripción |
+|---|---|---|---|
+| `mes` | string | `YYYY-MM` | Mes del año 2025 (`2025-01` a `2025-12`) |
+| `cobre_fino_lb` | float64 | Libras (lb) | Producción total de cobre fino en libras |
+| `precio_cobre_usd_lb` | float64 | USD/lb | Precio del cobre al cierre del mes |
+| `ingresos_usd` | float64 | USD | Ingresos operacionales por venta |
+| `costos_totales_usd` | float64 | USD | Costos operacionales totales en USD (`NaN` en junio) |
+| `cash_cost_usd_lb` | float64 | USD/lb | Costo operacional por libra producida (`NaN` en junio) |
+| `utilidades_usd` | float64 | USD | Utilidad operacional del mes (`NaN` en junio) |
+
+---
+
+## 8. Lectura del log de validaciones y resumen en pantalla
+
+El pipeline está diseñado bajo el principio de que **las fallas de calidad de datos nunca detienen la ejecución**, sino que se capturan de forma no invasiva en un registro unificado para su posterior auditoría.
+
+### Resumen en pantalla
+Al terminar de ejecutar `main.py`, se despliega en la terminal un resumen estructurado:
+- Total global de fallas registradas.
+- Agrupación por etapa (`cleaning`, `metrics`).
+- Para cada etapa, el conteo total de anomalías y hasta 5 ejemplos con su dataset, identificador de fila fuente (`ref`), columna observada, valor original recibido y la regla infringida.
+
+### Inspección del archivo `validation_log.parquet`
+El registro completo se almacena en la raíz del proyecto en `validation_log.parquet`. Puede consultarse directamente mediante Python y pandas:
+
+```python
+import pandas as pd
+
+# Cargar el log de validaciones
+df_log = pd.read_parquet("validation_log.parquet")
+
+# Ver la estructura y las primeras filas
+print(df_log.head(10))
+
+# Ver el conteo de fallas agrupadas por etapa y dataset
+print(df_log.groupby(["stage", "dataset"]).size())
+
+# Filtrar fallas ocurridas en la etapa de métricas
+fallas_metricas = df_log[df_log["stage"] == "metrics"]
+print(fallas_metricas[["source_ref", "field", "rule"]])
+
+# Filtrar descartes de cabeceras o filas de totales en costos
+descartes_costos = df_log[df_log["rule"].str.contains("se elimina")]
+print(descartes_costos[["source_ref", "field", "value", "rule"]])
+```
+
+Las columnas de `validation_log.parquet` son:
+- `stage`: Nombre de la etapa que reportó la falla (`cleaning` o `metrics`).
+- `dataset`: Dataset de origen (ej. `bronze_costos`, `silver_costos`, `silver_precio_cobre`, `gold_metricas`).
+- `source_ref`: Referencia trazable a la fila de origen (número de línea en el archivo original o identificador de mes).
+- `field`: Nombre del campo o columna involucrada.
+- `value`: Valor original recibido tal como estaba en crudo.
+- `rule`: Descripción detallada de la regla violada o decisión aplicada.
+
+---
+
+## 9. Repetición de la corrida de forma 100% offline
+
+Una vez completada la primera ejecución, los archivos JSON con las respuestas de la API quedan almacenados permanentemente en:
+- `raw/precio_cobre_2025.json`
+- `raw/tipo_cambio_2025.json`
+
+La función `fetch_or_load_api_json()` en `code/extraction.py` comprueba primero si el archivo de destino existe en el disco antes de abrir cualquier conexión de red. Si el archivo existe, lo carga directamente de disco e imprime:
+```text
+[extraction] Reutilizando respuesta existente de API desde precio_cobre_2025.json
+[extraction] Reutilizando respuesta existente de API desde tipo_cambio_2025.json
+```
+
+Por lo tanto, para repetir la ejecución completa sin acceso a Internet:
+1. Asegúrese de que los archivos JSON existen en `raw/` (se encuentran versionados en el repositorio o creados tras la primera corrida).
+2. Desactive su conexión de red (opcional).
+3. Ejecute normalmente:
+   ```bash
+   python main.py
+   ```
+El pipeline se completará de punta a punta sin realizar ninguna solicitud HTTP.
+
+---
+
+## 10. Problemas comunes y soluciones
+
+A continuación se detallan las incidencias técnicas y operacionales reales que pueden presentarse durante la ejecución:
+
+1. **Error `ModuleNotFoundError: No module named 'pandas'` o `pyarrow`:**
+   - *Causa:* El comando `python main.py` se ejecutó fuera del entorno virtual donde se instalaron las dependencias, o no se ejecutó el paso de instalación.
+   - *Solución:* Verifique que el entorno virtual esté activo (el prompt de la terminal debe mostrar `(.venv)`) y vuelva a ejecutar `pip install -r requirements.txt`.
+
+2. **Falla de conexión en la primera ejecución (`urllib.error.URLError` o `TimeoutError`):**
+   - *Causa:* La máquina no tiene acceso a Internet o la API de `mindicador.cl` no responde, y los archivos `precio_cobre_2025.json` y `tipo_cambio_2025.json` aún no han sido descargados en `raw/`.
+   - *Solución:* Asegúrese de disponer de conexión a Internet durante la primera corrida, o verifique que los dos archivos JSON ya se encuentren en la carpeta `raw/`.
+
+3. **Error `FileNotFoundError` al iniciar la extracción:**
+   - *Causa:* Se eliminó o modificó la ubicación de alguno de los archivos originales en `raw/` (`origen_mina.sqlite`, `origen_costos_planta.csv`, `origen_leyes_laboratorio.json`).
+   - *Solución:* Asegúrese de que la carpeta `raw/` contenga íntegros los tres archivos originales entregados.
+
+4. **Presencia de valores `NaN` en `gold_metricas.parquet` para el mes de junio (`2025-06`):**
+   - *Causa:* No constituye un error del código ni del entorno. En `raw/origen_costos_planta.csv`, la planta Cerro Norte registra `N/A` en la columna `insumos_clp` para junio. En cumplimiento de la regla de negocio `REGLA 3` (`IMPUTE_MISSING_COST = False`), el pipeline no inventa costos parciales ni imputa ceros, resultando en `NaN` para `costos_totales_usd`, `cash_cost_usd_lb` y `utilidades_usd` de dicho mes. La alerta correspondiente queda documentada en `validation_log.parquet`.

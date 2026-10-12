@@ -1,0 +1,5 @@
+/.kiro
+*.ipynb
+ARCHITECTURE.md
+PROJECT_DESCRIPTION.md
+.venv/
